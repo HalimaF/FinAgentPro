@@ -236,8 +236,3 @@ FinAgent-Pro/
 
 ---
 
-## 📞 Support
-
-For questions or demo requests: [Your Contact Info]
-
-**Built with ❤️ for IBM watsonx Orchestrate Hackathon**
