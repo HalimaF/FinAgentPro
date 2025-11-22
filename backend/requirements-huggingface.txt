@@ -1,0 +1,32 @@
+# Hugging Face LLM Integration Requirements
+# Install with: pip install -r requirements-huggingface.txt
+
+# Core Hugging Face libraries
+transformers>=4.35.0
+sentence-transformers>=2.2.0
+
+# ML/AI libraries (optional for local model inference)
+torch>=2.0.0; platform_system != "Windows" or python_version < "3.13"
+# Note: PyTorch for Windows Python 3.13 may require manual installation
+# Use: pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# HTTP client for Hugging Face Inference API
+requests>=2.31.0
+
+# Image processing for multimodal models
+pillow>=10.0.0
+
+# Optional: Accelerated inference
+# accelerate>=0.24.0
+# optimum>=1.14.0
+
+# Financial domain models (automatically downloaded)
+# - ProsusAI/finbert (financial sentiment analysis)
+# - microsoft/layoutlmv3-base (document understanding)
+# - HuggingFaceH4/zephyr-7b-beta (conversational AI)
+# - facebook/bart-large-cnn (summarization)
+# - sentence-transformers/all-MiniLM-L6-v2 (embeddings)
+
+# Environment variables needed:
+# HUGGINGFACE_API_TOKEN=your_token_here (optional, for API mode)
+# HF_HOME=/path/to/cache (optional, default: ~/.cache/huggingface)

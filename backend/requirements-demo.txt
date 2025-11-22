@@ -1,0 +1,10 @@
+# FinAgent Pro - Minimal requirements for DEMO_MODE (Windows friendly, Py 3.13)
+# Use newer versions with prebuilt wheels to avoid compiling Rust/C extensions.
+fastapi>=0.115.0,<1.0.0
+uvicorn[standard]>=0.30.0,<1.0.0
+pydantic>=2.8.0,<3.0.0
+python-multipart>=0.0.9
+loguru>=0.7,<1.0
+# SQLAlchemy imported by DatabaseService; DB init is skipped in DEMO_MODE
+sqlalchemy>=2.0.30,<3.0.0
+email-validator>=2.1.0.post1
