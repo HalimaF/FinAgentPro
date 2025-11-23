@@ -10,6 +10,37 @@ Built for the Agentic AI Hackathon with IBM watsonx Orchestrate
 
 FinAgent Pro is an enterprise-grade multi-agent AI system that automates end-to-end financial operations using intelligent agent collaboration orchestrated by IBM watsonx. It eliminates manual data entry, reduces fraud, and provides real-time financial insights through autonomous AI agents enhanced with **Hugging Face LLMs** for financial domain expertise.
 
+## 🔵 IBM watsonx Orchestrate Integration
+
+**Built for IBM watsonx Agentic AI Hackathon 2025** 🏆
+
+FinAgent Pro leverages **IBM watsonx Orchestrate** as the central coordination hub for multi-agent workflows:
+
+- ✅ **Webhook Integration**: `/webhooks/ibm-orchestrate` endpoint for skill invocation
+- ✅ **5 Digital Skills**: Expense classification, invoice creation, fraud detection, cashflow forecasting, smart chat
+- ✅ **Workflow Orchestration**: Complete YAML workflow definitions with conditional logic and parallel execution
+- ✅ **Event-Driven Architecture**: Real-time agent communication via message bus
+- ✅ **Production-Ready**: Skill definition JSON ready for IBM Orchestrate import
+
+**📘 For Hackathon Judges:** See [`HACKATHON_SUBMISSION.md`](./HACKATHON_SUBMISSION.md) for complete IBM watsonx integration details, demo instructions, and requirements compliance.
+
+**🔧 Quick Test:**
+```bash
+# Test IBM webhook locally (no IBM account needed)
+curl -X POST http://localhost:8000/webhooks/ibm-orchestrate \
+  -H "Content-Type: application/json" \
+  -H "X-IBM-ORCH-KEY: demo_key" \
+  -d '{"action": "smart.chat", "payload": {"query": "Summarize expenses"}}'
+```
+
+**📁 Integration Files:**
+- `backend/main.py` lines 141-182: IBM webhook endpoint
+- `watsonx/skills/finagent_orchestrate_skill.json`: IBM skill definition
+- `watsonx/README.md`: Complete orchestration configurations (580 lines)
+- `watsonx/tools/`: Test scripts and examples
+
+---
+
 ## 💼 Why Businesses Need It
 
 ### Current Pain Points

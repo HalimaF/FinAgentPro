@@ -687,6 +687,53 @@ async def list_ai_features():
     }
 
 
+# ==================== Demo Invoice Endpoint ====================
+
+@app.post("/api/v1/demo/invoices")
+async def create_demo_invoice(request: dict):
+    """
+    Demo invoice creation endpoint (no auth required)
+    For testing and demonstration purposes
+    """
+    try:
+        logger.info(f"Creating demo invoice: {request}")
+        
+        # Extract invoice details from request
+        description = request.get("description", "")
+        
+        # Return demo invoice response
+        return {
+            "success": True,
+            "invoice": {
+                "invoice_id": f"INV-{os.urandom(4).hex().upper()}",
+                "invoice_number": f"INV-2024-{os.urandom(2).hex().upper()}",
+                "status": "created",
+                "customer": "Demo Customer",
+                "amount": 15000.00,
+                "currency": "USD",
+                "due_date": "2024-12-31",
+                "items": [
+                    {
+                        "description": description or "Software Development Project",
+                        "quantity": 1,
+                        "unit_price": 15000.00,
+                        "total": 15000.00
+                    }
+                ],
+                "pdf_url": "/api/v1/invoices/demo/pdf",
+                "payment_url": "https://pay.example.com/demo",
+                "created_at": "2024-11-23T18:00:00Z"
+            }
+        }
+    except Exception as e:
+        logger.error(f"Demo invoice creation failed: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+
 # ==================== WebSocket for Real-time Updates ====================
 
 from fastapi import WebSocket, WebSocketDisconnect

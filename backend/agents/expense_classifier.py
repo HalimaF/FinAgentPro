@@ -8,22 +8,28 @@ import os
 import asyncio
 from typing import Dict, Optional, List
 from datetime import datetime
-import pytesseract
-from PIL import Image
+# Optional OCR deps; handle absence gracefully
+try:
+    import pytesseract  # type: ignore
+    from PIL import Image  # type: ignore
+except Exception:
+    pytesseract = None  # type: ignore
+    Image = None  # type: ignore
 import io
 from openai import AsyncOpenAI
 from loguru import logger
 import json
 
 # Configure Tesseract path if provided via environment
-tesseract_env_path = os.getenv("TESSERACT_PATH")
-if tesseract_env_path and os.path.isfile(tesseract_env_path):
-    pytesseract.pytesseract.tesseract_cmd = tesseract_env_path
-elif os.name == "nt":
-    # Fallback to common Windows install path
-    default_tesseract = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
-    if os.path.isfile(default_tesseract):
-        pytesseract.pytesseract.tesseract_cmd = default_tesseract
+if pytesseract is not None:
+    tesseract_env_path = os.getenv("TESSERACT_PATH")
+    if tesseract_env_path and os.path.isfile(tesseract_env_path):
+        pytesseract.pytesseract.tesseract_cmd = tesseract_env_path
+    elif os.name == "nt":
+        # Fallback to common Windows install path
+        default_tesseract = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+        if os.path.isfile(default_tesseract):
+            pytesseract.pytesseract.tesseract_cmd = default_tesseract
 
 
 class ExpenseClassifierAgent:
@@ -143,24 +149,29 @@ class ExpenseClassifierAgent:
         """
         Extract text from receipt image using OCR
         """
+        # If OCR deps are unavailable, skip OCR gracefully
+        if pytesseract is None or Image is None:
+            logger.warning("pytesseract/PIL not available; skipping OCR and returning empty text")
+            return {"text": "", "confidence": 0.0, "method": "unavailable"}
+
         try:
             # Convert bytes to PIL Image
             image = Image.open(io.BytesIO(file_content))
-            
+
             # Perform OCR with Tesseract
             text = pytesseract.image_to_string(image)
-            
+
             # Get confidence data
             data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
             confidences = [int(conf) for conf in data['conf'] if int(conf) > 0]
             avg_confidence = sum(confidences) / len(confidences) if confidences else 0
-            
+
             return {
                 "text": text,
                 "confidence": avg_confidence / 100,
                 "method": "tesseract"
             }
-            
+
         except Exception as e:
             logger.error(f"OCR failed: {str(e)}")
             # Fallback: return empty result
