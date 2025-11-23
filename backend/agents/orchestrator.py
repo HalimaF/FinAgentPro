@@ -202,6 +202,7 @@ class WorkflowOrchestrator:
             "status": expense_result.get("status", "pending_review"),
             "processed_at": expense_result.get("processed_at", datetime.utcnow().isoformat()),
             "fraud_analysis": expense_result.get("fraud_analysis"),
+            "receipt_url": expense_result.get("receipt_url"),
         }
 
         return enriched

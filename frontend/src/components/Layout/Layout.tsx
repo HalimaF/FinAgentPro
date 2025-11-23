@@ -38,7 +38,8 @@ const Layout: React.FC = () => {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Expenses', icon: <Receipt />, path: '/expenses' },
-    { text: 'Invoices', icon: <Description />, path: '/invoices' },
+    { text: 'Create Invoice', icon: <Description />, path: '/invoices' },
+    { text: 'Track Invoices', icon: <Description />, path: '/invoices/track' },
     { text: 'Fraud Alerts', icon: <Security />, path: '/fraud' },
     { text: 'Cashflow Forecast', icon: <TrendingUp />, path: '/cashflow' },
     { text: 'Voice Assistant', icon: <Mic />, path: '/voice' },

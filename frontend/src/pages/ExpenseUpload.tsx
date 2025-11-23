@@ -177,9 +177,16 @@ const ExpenseUpload: React.FC = () => {
                     )}
 
                     <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                      <Button size="small" variant="outlined" startIcon={<Visibility />}>
-                        View Receipt
-                      </Button>
+                      {expense.receipt_url && (
+                        <Button 
+                          size="small" 
+                          variant="outlined" 
+                          startIcon={<Visibility />}
+                          onClick={() => window.open(expense.receipt_url, '_blank')}
+                        >
+                          View Receipt
+                        </Button>
+                      )}
                     </Box>
                   </CardContent>
                 </Card>

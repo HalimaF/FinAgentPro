@@ -61,6 +61,7 @@ class ExpenseUploadResponse(BaseModel):
     status: str
     processed_at: str
     fraud_analysis: Optional[Dict] = None
+    receipt_url: Optional[str] = None
 
 
 # ==================== Invoice Models ====================

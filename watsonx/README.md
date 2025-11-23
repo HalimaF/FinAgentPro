@@ -1,21 +1,4 @@
-# IBM watsonx Orchestrate - FinAgent Pro Configuration
-
-## 🎯 Quick Answer: Do You Need to Connect IBM watsonx for Hackathon?
-
-**NO - Not Required for Submission** ✅
-- Your code already demonstrates watsonx orchestration concepts
-- All YAML configurations are complete and showcase the architecture
-- Judges can evaluate without live IBM connection
-- DEMO_MODE provides full functionality for demos
-
-**YES - Only for Production Deployment** 
-- Actual IBM watsonx account needed for production
-- Deploy agents as skills in watsonx platform
-- See "Production Setup" section below
-
----
-
-## Overview
+# IBM watsonx Orchestrate - FinAgent Pro 
 
 This directory contains all IBM watsonx Orchestrate configurations for FinAgent Pro, including:
 - Workflow definitions (complete and ready)

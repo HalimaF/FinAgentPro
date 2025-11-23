@@ -8,31 +8,130 @@ from datetime import datetime, timedelta
 from loguru import logger
 import asyncio
 import random
+import base64
+import io
+
+# In-memory storage for demo mode
+_expense_storage = {}
+_invoice_storage = {}
 
 
 class ExpenseClassifierAgent:
     def __init__(self, huggingface_service=None):
         self.name = "ExpenseClassifierAgentStub"
         self.hf_service = huggingface_service
+        self.expenses_by_user = {}  # Track expenses for analytics
         logger.info(f"✅ {self.name} initialized (stub)")
 
     def health_status(self) -> Dict:
         return {"agent": self.name, "status": "healthy", "stub": True}
 
     async def process_receipt(self, file_content: bytes, filename: str, user_id: str) -> Dict:
-        random.seed(42)
-        amount = round(random.uniform(50, 1250), 2)
-        result = {
-            "expense_id": f"exp_{random.randrange(10**8):08d}",
-            "user_id": user_id,
-            "merchant": "Delta Airlines" if amount > 300 else "Starbucks",
-            "amount": amount,
-            "date": datetime.utcnow().date().isoformat(),
-            "category": "Travel" if amount > 300 else "Meals",
-            "classification_confidence": 0.953 if amount > 300 else 0.972,
-            "status": "approved",
+        # Generate varied demo data
+        file_hash = len(file_content) % 100
+        amount = round(50 + (file_hash * 30), 2)
+        
+        merchants = ["Starbucks", "Delta Airlines", "Amazon Web Services", "Office Depot", "Uber", "WeWork"]
+        categories = ["Meals", "Travel", "Software", "Office Supplies", "Transportation", "Rent"]
+        idx = file_hash % len(merchants)
+        
+        expense_id = f"exp_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{file_hash:02d}"
+        
+        # Store file content as base64 for viewing
+        receipt_data = base64.b64encode(file_content).decode('utf-8')
+        _expense_storage[expense_id] = {
+            "file_content": receipt_data,
+            "filename": filename,
+            "content_type": "image/png" if filename.lower().endswith('.png') else "image/jpeg"
         }
+        
+        result = {
+            "expense_id": expense_id,
+            "user_id": user_id,
+            "merchant": merchants[idx],
+            "amount": amount,
+            "date": (datetime.utcnow() - timedelta(days=file_hash % 30)).date().isoformat(),
+            "category": categories[idx],
+            "classification_confidence": 0.90 + (file_hash % 10) / 100,
+            "status": "approved" if amount < 1000 else "pending_review",
+            "receipt_url": f"/api/v1/expenses/{expense_id}/receipt",
+        }
+        
+        # Store expense for analytics
+        if user_id not in self.expenses_by_user:
+            self.expenses_by_user[user_id] = []
+        self.expenses_by_user[user_id].append(result)
+        
         return result
+    
+    def get_receipt(self, expense_id: str) -> Optional[Dict]:
+        """Get stored receipt data"""
+        return _expense_storage.get(expense_id)
+    
+    def get_analytics(self, user_id: str) -> Dict:
+        """Get expense analytics for a user"""
+        expenses = self.expenses_by_user.get(user_id, [])
+        
+        if not expenses:
+            # Return sample data if no expenses yet
+            return {
+                "total_expenses": 48392.00,
+                "expense_count": 127,
+                "average_expense": 381.00,
+                "by_category": {
+                    "Meals": 8234.50,
+                    "Travel": 15890.00,
+                    "Software": 12450.00,
+                    "Office Supplies": 5678.50,
+                    "Transportation": 3245.00,
+                    "Rent": 2894.00
+                },
+                "by_status": {
+                    "approved": 115,
+                    "pending_review": 8,
+                    "rejected": 4
+                },
+                "recent_trend": [
+                    {"month": "Jan", "total": 3850.00},
+                    {"month": "Feb", "total": 4120.00},
+                    {"month": "Mar", "total": 3980.00},
+                    {"month": "Apr", "total": 5240.00},
+                    {"month": "May", "total": 4580.00},
+                    {"month": "Jun", "total": 5120.00}
+                ],
+                "top_merchants": [
+                    {"merchant": "Amazon Web Services", "total": 8920.00, "count": 12},
+                    {"merchant": "Delta Airlines", "total": 7850.00, "count": 6},
+                    {"merchant": "Office Depot", "total": 4230.00, "count": 28},
+                    {"merchant": "Starbucks", "total": 2156.00, "count": 47},
+                    {"merchant": "Uber", "total": 1890.00, "count": 34}
+                ]
+            }
+        
+        # Calculate actual analytics from stored expenses
+        total = sum(e["amount"] for e in expenses)
+        count = len(expenses)
+        by_category = {}
+        by_status = {}
+        
+        for expense in expenses:
+            cat = expense["category"]
+            by_category[cat] = by_category.get(cat, 0) + expense["amount"]
+            
+            status = expense["status"]
+            by_status[status] = by_status.get(status, 0) + 1
+        
+        return {
+            "total_expenses": round(total, 2),
+            "expense_count": count,
+            "average_expense": round(total / count if count > 0 else 0, 2),
+            "by_category": by_category,
+            "by_status": by_status,
+            "recent_trend": [
+                {"month": "Current", "total": round(total, 2)}
+            ],
+            "top_merchants": []
+        }
 
 
 class FraudAnalyzerAgent:
@@ -58,27 +157,132 @@ class FraudAnalyzerAgent:
 class InvoiceAgent:
     def __init__(self):
         self.name = "InvoiceAgentStub"
+        self.invoices_by_user = {}  # Track invoices for management
         logger.info(f"✅ {self.name} initialized (stub)")
 
     def health_status(self) -> Dict:
         return {"agent": self.name, "status": "healthy", "stub": True}
 
     async def create_invoice(self, user_input: str, user_id: str, structured_data: Optional[Dict] = None) -> Dict:
-        number = f"INV-{datetime.utcnow().strftime('%Y%m%d')}-0045"
-        total = 12500.00 if "12,500" in user_input or "12500" in user_input else 500.00
-        return {
-            "invoice_id": f"inv_{datetime.utcnow().strftime('%H%M%S')}",
+        number = f"INV-{datetime.utcnow().strftime('%Y%m%d%H%M')}"
+        
+        # Extract amount from input
+        import re
+        amount_match = re.search(r'\$?([\d,]+(?:\.\d{2})?)', user_input)
+        total = float(amount_match.group(1).replace(',', '')) if amount_match else 500.00
+        
+        # Extract client name
+        client_name = "Client Co"
+        for word in ["Acme", "Corp", "Inc", "LLC", "Ltd"]:
+            if word.lower() in user_input.lower():
+                client_name = f"{word} Corporation"
+                break
+        
+        invoice_id = f"inv_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+        
+        # Generate simple PDF-like text (in real app use reportlab)
+        pdf_content = f"""INVOICE
+
+Invoice Number: {number}
+Date: {datetime.utcnow().date().isoformat()}
+
+BILL TO:
+{client_name}
+
+ITEMS:
+Description: Professional Services
+Quantity: 1
+Unit Price: ${total:.2f}
+
+TOTAL: ${total:.2f}
+
+Due Date: {(datetime.utcnow() + timedelta(days=30)).date().isoformat()}
+
+Thank you for your business!
+"""
+        # Store as base64
+        pdf_bytes = pdf_content.encode('utf-8')
+        _invoice_storage[invoice_id] = base64.b64encode(pdf_bytes).decode('utf-8')
+        
+        invoice_data = {
+            "invoice_id": invoice_id,
             "invoice_number": number,
-            "client_name": "Acme Corp" if "Acme" in user_input else "Client Co",
+            "client_name": client_name,
             "items": [
-                {"description": "Q4 consulting services", "quantity": 1, "unit_price": total}
+                {"description": "Professional Services", "quantity": 1, "unit_price": total}
             ],
             "total_amount": total,
             "due_date": (datetime.utcnow() + timedelta(days=30)).date().isoformat(),
-            "pdf_url": "https://example.com/invoices/INV-demo.pdf",
-            "payment_url": "https://pay.stripe.com/demo",
+            "pdf_url": f"/api/v1/invoices/{invoice_id}/pdf",
+            "payment_url": f"https://pay.demo.com/{invoice_id}",
             "status": "sent",
+            "payment_status": "pending",
+            "created_date": datetime.utcnow().isoformat(),
         }
+        
+        # Store invoice for tracking
+        if user_id not in self.invoices_by_user:
+            self.invoices_by_user[user_id] = []
+        self.invoices_by_user[user_id].append(invoice_data)
+        
+        return invoice_data
+    
+    def get_invoice_pdf(self, invoice_id: str) -> Optional[str]:
+        """Get stored invoice PDF as base64"""
+        return _invoice_storage.get(invoice_id)
+    
+    def get_invoices(self, user_id: str, status: Optional[str] = None) -> List[Dict]:
+        """Get invoices for a user, optionally filtered by status"""
+        invoices = self.invoices_by_user.get(user_id, [])
+        
+        if not invoices:
+            # Return sample data if no invoices yet
+            return [
+                {
+                    "invoice_id": "inv_sample1",
+                    "invoice_number": "INV-20240101",
+                    "client_name": "Acme Corporation",
+                    "total_amount": 5000.00,
+                    "due_date": (datetime.utcnow() + timedelta(days=15)).date().isoformat(),
+                    "payment_status": "pending",
+                    "status": "sent",
+                    "created_date": (datetime.utcnow() - timedelta(days=15)).isoformat(),
+                },
+                {
+                    "invoice_id": "inv_sample2",
+                    "invoice_number": "INV-20240115",
+                    "client_name": "Corp Inc",
+                    "total_amount": 3200.00,
+                    "due_date": (datetime.utcnow() + timedelta(days=5)).date().isoformat(),
+                    "payment_status": "paid",
+                    "status": "sent",
+                    "created_date": (datetime.utcnow() - timedelta(days=25)).isoformat(),
+                },
+                {
+                    "invoice_id": "inv_sample3",
+                    "invoice_number": "INV-20240120",
+                    "client_name": "Tech LLC",
+                    "total_amount": 7500.00,
+                    "due_date": (datetime.utcnow() - timedelta(days=5)).date().isoformat(),
+                    "payment_status": "overdue",
+                    "status": "sent",
+                    "created_date": (datetime.utcnow() - timedelta(days=35)).isoformat(),
+                },
+            ]
+        
+        if status:
+            invoices = [inv for inv in invoices if inv.get("payment_status") == status]
+        
+        return invoices
+    
+    def update_invoice_status(self, invoice_id: str, payment_status: str) -> bool:
+        """Update invoice payment status"""
+        for user_invoices in self.invoices_by_user.values():
+            for invoice in user_invoices:
+                if invoice["invoice_id"] == invoice_id:
+                    invoice["payment_status"] = payment_status
+                    return True
+        return False
 
     async def send_invoice(self, invoice_id: str):
         await asyncio.sleep(0.1)

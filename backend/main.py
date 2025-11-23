@@ -291,6 +291,35 @@ async def get_expense(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/v1/expenses/{expense_id}/receipt")
+async def get_expense_receipt(
+    expense_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Get receipt image for an expense"""
+    from fastapi.responses import Response
+    import base64
+    
+    try:
+        if DEMO_MODE:
+            receipt_data = app.state.expense_classifier.get_receipt(expense_id)
+            if not receipt_data:
+                raise HTTPException(status_code=404, detail="Receipt not found")
+            
+            file_bytes = base64.b64decode(receipt_data["file_content"])
+            return Response(
+                content=file_bytes,
+                media_type=receipt_data.get("content_type", "image/jpeg"),
+                headers={"Content-Disposition": f"inline; filename={receipt_data.get('filename', 'receipt.jpg')}"}
+            )
+        else:
+            # In production: fetch from storage service
+            raise HTTPException(status_code=501, detail="Not implemented in production mode")
+    except Exception as e:
+        logger.error(f"Failed to get receipt: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== Invoice Management ====================
 
 @app.post("/api/v1/invoices", response_model=InvoiceResponse)
@@ -342,6 +371,102 @@ async def list_invoices(
         )
         return {"invoices": invoices, "total": len(invoices)}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/invoices/{invoice_id}/pdf")
+async def download_invoice_pdf(
+    invoice_id: str,
+    user: User = Depends(get_current_user)
+):
+    """Download invoice PDF"""
+    from fastapi.responses import Response
+    import base64
+    
+    try:
+        if DEMO_MODE:
+            pdf_data = app.state.invoice_agent.get_invoice_pdf(invoice_id)
+            if not pdf_data:
+                raise HTTPException(status_code=404, detail="Invoice PDF not found")
+            
+            pdf_bytes = base64.b64decode(pdf_data)
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f"attachment; filename=invoice_{invoice_id}.pdf"}
+            )
+        else:
+            # In production: fetch from storage service
+            raise HTTPException(status_code=501, detail="Not implemented in production mode")
+    except Exception as e:
+        logger.error(f"Failed to download invoice PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== Analytics ====================
+
+@app.get("/api/v1/analytics/expenses")
+async def get_expense_analytics(user: User = Depends(get_current_user)):
+    """
+    Get comprehensive expense analytics
+    - Total expenses and count
+    - Category breakdown
+    - Status distribution
+    - Monthly trends
+    - Top merchants
+    """
+    try:
+        logger.info(f"Fetching expense analytics for user {user.id}")
+        analytics = app.state.expense_classifier.get_analytics(str(user.id))
+        return analytics
+    except Exception as e:
+        logger.error(f"Failed to fetch expense analytics: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== Invoice Tracking ====================
+
+@app.get("/api/v1/invoices")
+async def get_invoices(
+    user: User = Depends(get_current_user),
+    status: Optional[str] = None
+):
+    """
+    Get all invoices for the user
+    - Filter by payment status (pending, paid, overdue)
+    - Track invoice history
+    - Monitor payment status
+    """
+    try:
+        logger.info(f"Fetching invoices for user {user.id}, status filter: {status}")
+        invoices = app.state.invoice_agent.get_invoices(str(user.id), status)
+        return invoices
+    except Exception as e:
+        logger.error(f"Failed to fetch invoices: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/v1/invoices/{invoice_id}/status")
+async def update_invoice_status(
+    invoice_id: str,
+    payment_status: str,
+    user: User = Depends(get_current_user)
+):
+    """
+    Update invoice payment status
+    - Mark as paid, pending, or overdue
+    - Track payment history
+    """
+    try:
+        logger.info(f"Updating invoice {invoice_id} status to {payment_status}")
+        success = app.state.invoice_agent.update_invoice_status(invoice_id, payment_status)
+        if not success:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        return {"success": True, "invoice_id": invoice_id, "payment_status": payment_status}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update invoice status: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
